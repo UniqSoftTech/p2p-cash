@@ -33,7 +33,7 @@ export default function Home() {
           alt="Virtual Card"
           width={500}
           height={500}
-          className="absolute right-10 top-20 max-w-[90%] md:max-w-none"
+          className="absolute hidden md:block right-10 top-20 max-w-[90%] md:max-w-none"
         />
       </div>
     </div>
