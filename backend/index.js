@@ -4,7 +4,14 @@ import { createServer } from 'http';
 
 const app = express();
 const http = createServer(app);
-const io = new Server(http);
+const io = new Server(http, {
+  cors: {
+    origin: "*", // Be more specific in production
+    methods: ["GET", "POST"]
+  },
+  transports: ['websocket']
+});
+
 const port = process.env.PORT || 5050;
 
 app.use(express.json());
@@ -38,4 +45,9 @@ app.post('/api/qr-data', (req, res) => {
 
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+});
+
+// Error handling for the HTTP server
+http.on('error', (error) => {
+  console.error('HTTP server error:', error);
 });
