@@ -1,5 +1,7 @@
+"use client";
 import localFont from "next/font/local";
 import "./globals.css";
+import { MetaMaskProvider } from "@metamask/sdk-react";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -12,18 +14,13 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata = {
-  title: "P2P Cash",
-  description: "P2P Cash",
-};
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <MetaMaskProvider>{children}</MetaMaskProvider>
       </body>
     </html>
   );

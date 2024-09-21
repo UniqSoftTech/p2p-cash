@@ -1,3 +1,4 @@
+"use client";
 import dynamic from "next/dynamic";
 import VirtualCard from "./assets/virtual_card.png";
 import Background from "./assets/bg.jpg";
