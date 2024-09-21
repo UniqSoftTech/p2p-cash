@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors'; // Add this import
+import multer from 'multer'; // Add this import
 
 const app = express();
 const server = createServer(app);
@@ -37,6 +38,27 @@ app.post('/api/qr-data', (req, res) => {
   latestData.recipient = rawData[2].value || '';
   
   res.status(200).json({ message: 'Payload received successfully' });
+});
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+// Add a new endpoint for receiving images
+app.post('/api/upload-image', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No image file uploaded' });
+  }
+  
+  console.log('Received image:', req.file);
+  
+  // Here you can process the image or save its information
+  // For now, we'll just send back some basic file info
+  res.status(200).json({
+    message: 'Image uploaded successfully',
+    filename: req.file.filename,
+    originalName: req.file.originalname,
+    size: req.file.size
+  });
 });
 
 // Add a new endpoint for polling
