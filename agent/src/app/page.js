@@ -16,7 +16,7 @@ export default function Home() {
       description: 'Payment for goods',
     });
     const connectWebSocket = () => {
-      socket = new WebSocket('wss://seahorse-app-fejfa.ondigitalocean.app');
+      socket = new WebSocket('ws://seahorse-app-fejfa.ondigitalocean.app');
 
       socket.onopen = () => {
         console.log('WebSocket connection established');
