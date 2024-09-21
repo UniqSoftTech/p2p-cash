@@ -5,7 +5,7 @@ import { createServer } from 'http';
 const app = express();
 const http = createServer(app);
 const io = new Server(http);
-const port = 5050;
+const port = process.env.PORT || 5050;
 
 app.use(express.json());
 
