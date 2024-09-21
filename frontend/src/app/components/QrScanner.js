@@ -3,6 +3,8 @@
 import React, { useState, useRef } from "react";
 import { useZxing } from "react-zxing";
 import { parseSGQR } from "./SGQRParser"; // Import SGQRParser
+// import QuickPay from "quickpay-sdk";
+import useWalletAddress from "../hooks/useWallet";
 
 const QrScanner = () => {
   const [result, setResult] = useState("");
@@ -10,6 +12,12 @@ const QrScanner = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [parseData, setParseData] = useState("");
+  const { walletAddress } = useWalletAddress();
+
+  // const quickpay = new QuickPay({
+  //   apiKey: "$GJKNM!@#943",
+  //   currency: "USD",
+  // });
 
   const { ref: zxingRef } = useZxing({
     onDecodeResult(result) {
@@ -31,6 +39,16 @@ const QrScanner = () => {
     captureAndUploadImage();
 
     setIsModalOpen(false); // Close the modal after submission
+  };
+
+  const handleSubmitPay = async () => {
+    // Parse QR code for payment
+    // const paymentInfo = await quickpay.parseQRCode(parseData);
+    // Process payment
+    // const result = await quickpay.processPayment({
+    //   paymentInfo: paymentInfo,
+    //   walletAddress:
+    // })
   };
 
   const sendToBackend = async (data, amount) => {
@@ -100,21 +118,21 @@ const QrScanner = () => {
               zxingRef.current = el;
             }
           }}
-          className="rounded-lg shadow-lg w-full h-auto"
+          className="w-full h-auto rounded-lg shadow-lg"
         />
       </div>
 
-      <p className="text-center text-sm sm:text-base md:text-lg text-gray-400">
+      <p className="text-sm text-center text-gray-400 sm:text-base md:text-lg">
         <span className="font-bold">Last result:</span>
-        <pre className="bg-gray-900 p-2 rounded-md text-white whitespace-pre-wrap max-w-xs md:max-w-md lg:max-w-lg overflow-auto">
+        <pre className="max-w-xs p-2 overflow-auto text-white whitespace-pre-wrap bg-gray-900 rounded-md md:max-w-md lg:max-w-lg">
           {result || "Please scan the QR code..."}
         </pre>
       </p>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md">
-          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8 rounded-xl shadow-xl max-w-md w-full border border-blue-500/50">
-            <h2 className="text-2xl font-extrabold mb-6 text-white tracking-wide text-center">
+          <div className="w-full max-w-md p-8 border shadow-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl border-blue-500/50">
+            <h2 className="mb-6 text-2xl font-extrabold tracking-wide text-center text-white">
               Enter Amount
             </h2>
             <form onSubmit={handleSubmit}>
@@ -123,7 +141,7 @@ const QrScanner = () => {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-3 border border-gray-700 bg-gray-900 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-all duration-200 ease-in-out placeholder-gray-400 text-lg"
+                className="w-full p-3 text-lg text-white placeholder-gray-400 transition-all duration-200 ease-in-out bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
                 placeholder="Enter amount"
                 required
               />
@@ -131,13 +149,13 @@ const QrScanner = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 hover:shadow-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  className="px-6 py-2 text-white transition-all duration-200 ease-in-out bg-gray-700 rounded-lg hover:bg-gray-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-500 hover:shadow-blue-500/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="px-6 py-2 text-white transition-all duration-200 ease-in-out bg-pink-600 rounded-lg hover:bg-pink-500 hover:shadow-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   Submit
                 </button>

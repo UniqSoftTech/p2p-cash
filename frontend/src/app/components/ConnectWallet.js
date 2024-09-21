@@ -3,6 +3,7 @@
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import Web3Modal from "web3modal";
+import WalletConnectProvider from "@walletconnect/web3-provider"; // Import WalletConnect
 import useWalletAddress from "../hooks/useWallet";
 import { useRouter } from "next/navigation";
 
@@ -15,9 +16,18 @@ function App() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const providerOptions = {
+        walletconnect: {
+          package: WalletConnectProvider, // required
+          options: {
+            infuraId: "YOUR_INFURA_PROJECT_ID", // Required for WalletConnect (replace with your Infura ID)
+          },
+        },
+      };
+
       const modal = new Web3Modal({
         cacheProvider: false,
-        providerOptions: {},
+        providerOptions, // Add WalletConnect options
       });
       setWeb3Modal(modal);
     }
@@ -27,9 +37,9 @@ function App() {
   async function connectWallet() {
     if (typeof window !== "undefined") {
       if (!connected) {
-        if (window?.ethereum) {
+        try {
           const instance = await web3Modal.connect();
-          const provider = new ethers.BrowserProvider(window.ethereum);
+          const provider = new ethers.BrowserProvider(instance);
           const signer = await provider.getSigner();
           const _walletAddress = await signer.getAddress();
 
@@ -37,6 +47,8 @@ function App() {
           setWalletAddress(_walletAddress);
           storeWalletAddress(_walletAddress);
           router.push(`/home?walletAddress=${_walletAddress}`);
+        } catch (error) {
+          console.error("Failed to connect wallet:", error);
         }
       } else {
         setConnected(false);
