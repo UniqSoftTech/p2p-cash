@@ -59,7 +59,7 @@ export default function Home() {
   const handleAccept = async () => {
     if (paymentRequest && paymentRequest.qrcode) {
       try {
-        const iosAppUrl = `dbs-digibank://q?qPay_QRCode=`;
+        const iosAppUrl = `com.dbs.sg.dbsmbanking://q?qPay_QRCode=`;
         window.location.href = iosAppUrl;
       } catch (error) {
         console.error('Failed to open payment app:', error);
