@@ -3,9 +3,10 @@ import { createServer } from 'http';
 import cors from 'cors'; // Add this import
 import multer from 'multer'; // Add this import
 import path from 'path'; // Add this import
-import fs from 'fs'; // Add this import
+import fs from 'fs/promises'; // Change to use promises version
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { existsSync } from 'fs'; // Add this import
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,7 +48,7 @@ app.post('/api/qr-data', (req, res) => {
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
+if (!existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
@@ -60,10 +61,35 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir)
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname))
+    // Use a more persistent naming strategy
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
   }
 });
 const upload = multer({ storage: storage });
+
+// Add a cleanup function to remove old files
+async function cleanupOldFiles() {
+  try {
+    const files = await fs.readdir(uploadsDir);
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000; // milliseconds in an hour
+
+    for (const file of files) {
+      const filePath = path.join(uploadsDir, file);
+      const stats = await fs.stat(filePath);
+      if (now - stats.mtime.getTime() > oneHour) {
+        await fs.unlink(filePath);
+        console.log(`Deleted old file: ${file}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up old files:', error);
+  }
+}
+
+// Run cleanup every hour
+setInterval(cleanupOldFiles, 60 * 60 * 1000);
 
 // Update the image upload endpoint
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
@@ -94,7 +120,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
     };
   }
   console.log(latestData)
-  
+
   res.status(200).json({
     message: 'Image uploaded successfully',
     filename: req.file.filename,
