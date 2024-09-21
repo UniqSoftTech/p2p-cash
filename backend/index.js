@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
+import cors from 'cors'; // Add this import
 
 const app = express();
 const server = createServer(app);
@@ -7,6 +8,9 @@ const server = createServer(app);
 const port = process.env.PORT || 5050;
 
 app.use(express.json());
+app.use(cors({
+  origin: ['https://p2p-agent.vercel.app', 'https://p2p-cash.vercel.app', 'http://localhost:3000']
+}));
 
 // Add error handling middleware
 app.use((err, req, res, next) => {
