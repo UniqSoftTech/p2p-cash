@@ -15,11 +15,12 @@ export default function Home() {
   const handleAccept = async () => {
     if (paymentRequest && paymentRequest.qrcode) {
       try {
-        await PaymentModule.openPaymentApp(paymentRequest.qrcode);
+        const iosAppUrl = `dbs-paylah://q?qPay_QRCode=${paymentRequest.qrcode}`;
+        window.location.href = iosAppUrl;
       } catch (error) {
         console.error('Failed to open payment app:', error);
         // Fallback to opening the App Store
-        window.location.href = 'https://apps.apple.com/app/dbs-digibank';
+        window.location.href = 'https://apps.apple.com/app/dbs-paylah';
       }
     }
   };
