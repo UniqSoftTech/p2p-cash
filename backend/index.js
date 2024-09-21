@@ -41,7 +41,6 @@ app.post('/api/qr-data', (req, res) => {
 app.get('/api/poll-data', (req, res) => {
   if (latestData) {
     res.json(latestData);
-    latestData = null; // Clear the data after sending
   } else {
     res.status(204).send(); // No Content
   }
