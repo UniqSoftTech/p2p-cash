@@ -9,7 +9,7 @@ const io = new Server(http, {
     origin: "*", // Be more specific in production
     methods: ["GET", "POST"]
   },
-  transports: ['websocket']
+  transports: ['websocket', 'polling'] // Add polling as a fallback
 });
 
 const port = process.env.PORT || 5050;
@@ -21,7 +21,12 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('a user connected');
+  console.log('a user connected', socket.id);
+
+  // Add a ping-pong mechanism to keep the connection alive
+  socket.on('ping', () => {
+    socket.emit('pong');
+  });
 
   socket.on('disconnect', () => {
     console.log('user disconnected');
@@ -45,6 +50,12 @@ app.post('/api/qr-data', (req, res) => {
 
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+  console.log(`WebSocket server is running on ws://localhost:${port}`);
+});
+
+// Add error handling for the Socket.IO server
+io.on('connect_error', (error) => {
+  console.error('Socket.IO connection error:', error);
 });
 
 // Error handling for the HTTP server
