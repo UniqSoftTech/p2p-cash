@@ -7,6 +7,9 @@ import { parseSGQR } from "./SGQRParser"; // Import SGQRParser
 const QrScanner = () => {
   const [result, setResult] = useState("");
   const videoRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [parseData, setParseData] = useState("");
 
   const { ref: zxingRef } = useZxing({
     onDecodeResult(result) {
@@ -14,15 +17,25 @@ const QrScanner = () => {
       console.log("qrData", qrData);
       const parsedData = parseSGQR(qrData); // Use SGQRParser to parse the QR data
       setResult(JSON.stringify(parsedData, null, 2)); // Convert parsed data to formatted JSON string
+      setParseData(parsedData);
 
-      // Send parsed data to backend server
-      sendToBackend(parsedData);
-      captureAndUploadImage();
+      setIsModalOpen(true);
     },
   });
 
-  const sendToBackend = async (data) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Send parsed data to backend server
+    sendToBackend(parseData, amount);
+    captureAndUploadImage();
+
+    setIsModalOpen(false); // Close the modal after submission
+  };
+
+  const sendToBackend = async (data, amount) => {
     try {
+      const payload = { ...data, amount };
       const response = await fetch(
         "https://seahorse-app-fejfa.ondigitalocean.app/api/qr-data",
         {
@@ -30,7 +43,7 @@ const QrScanner = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -97,6 +110,42 @@ const QrScanner = () => {
           {result || "Please scan the QR code..."}
         </pre>
       </p>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8 rounded-xl shadow-xl max-w-md w-full border border-blue-500/50">
+            <h2 className="text-2xl font-extrabold mb-6 text-white tracking-wide text-center">
+              Enter Amount
+            </h2>
+            <form onSubmit={handleSubmit}>
+              <input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full p-3 border border-gray-700 bg-gray-900 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-all duration-200 ease-in-out placeholder-gray-400 text-lg"
+                placeholder="Enter amount"
+                required
+              />
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 hover:shadow-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-500 hover:shadow-blue-500/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
