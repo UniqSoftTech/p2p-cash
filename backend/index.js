@@ -2,6 +2,13 @@ import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors'; // Add this import
 import multer from 'multer'; // Add this import
+import path from 'path'; // Add this import
+import fs from 'fs'; // Add this import
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = createServer(app);
@@ -38,8 +45,25 @@ app.post('/api/qr-data', (req, res) => {
   res.status(200).json({ message: 'Payload received successfully' });
 });
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(uploadsDir));
+
 // Configure multer for file uploads
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir)
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname))
+  }
+});
+const upload = multer({ storage: storage });
 
 // Update the image upload endpoint
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
@@ -49,13 +73,15 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
   
   console.log('Received image:', req.file);
   
+  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  
   // Update latestData with image information
   if (latestData) {
     latestData.image = {
       filename: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size,
-      path: req.file.path
+      url: imageUrl
     };
   } else {
     latestData = {
@@ -63,7 +89,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
         filename: req.file.filename,
         originalName: req.file.originalname,
         size: req.file.size,
-        path: req.file.path
+        url: imageUrl
       }
     };
   }
@@ -73,7 +99,8 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
     message: 'Image uploaded successfully',
     filename: req.file.filename,
     originalName: req.file.originalname,
-    size: req.file.size
+    size: req.file.size,
+    url: imageUrl
   });
 });
 
