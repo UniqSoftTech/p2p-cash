@@ -68,7 +68,7 @@ export default function Home() {
     if (imageSrc) {
       const link = document.createElement('a');
       link.href = imageSrc;
-      link.download = 'payment_image.jpg';
+      link.download = 'qr_image.jpg';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -32,10 +32,8 @@ app.post('/api/qr-data', (req, res) => {
   
   // Store the latest data
   latestData = payload;
-  rawData = JSON.parse(payload.rawData);
   latestData.amount = payload.amount || 0;
   latestData.currency = payload.currency || 'SGD';
-  latestData.recipient = rawData[2].value || '';
   
   res.status(200).json({ message: 'Payload received successfully' });
 });
@@ -69,6 +67,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
       }
     };
   }
+  console.log(latestData)
   
   res.status(200).json({
     message: 'Image uploaded successfully',
