@@ -24,7 +24,7 @@ export default function Home() {
           
           // Set image source if available
           if (data.image && data.image.filename) {
-            setImageSrc(`https://seahorse-app-fejfa.ondigitalocean.app/uploads/${data.image.filename}`);
+            setImageSrc(data.image.url);
           }
         } else if (response.status === 204) {
           setConnectionStatus('No new data');
