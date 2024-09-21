@@ -1,14 +1,70 @@
 import express from 'express';
-import { createServer } from 'http'; // Change this to http
+import { createServer } from 'https';
 import { WebSocketServer } from 'ws';
-// Remove the forge import as we won't be using it for now
+import fs from 'fs';
+import forge from 'node-forge';
 
 const app = express();
 
-// Remove the generateCertificate function
+// Function to generate a self-signed certificate
+function generateCertificate() {
+  const pki = forge.pki;
+  const keys = pki.rsa.generateKeyPair(2048);
+  const cert = pki.createCertificate();
 
-// Remove the credentials variable
-const server = createServer(app); // Remove credentials parameter
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = '01';
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+
+  const attrs = [{
+    name: 'commonName',
+    value: 'localhost'
+  }, {
+    name: 'countryName',
+    value: 'US'
+  }, {
+    shortName: 'ST',
+    value: 'Virginia'
+  }, {
+    name: 'localityName',
+    value: 'Blacksburg'
+  }, {
+    name: 'organizationName',
+    value: 'Test'
+  }, {
+    shortName: 'OU',
+    value: 'Test'
+  }];
+  cert.setSubject(attrs);
+  cert.setIssuer(attrs);
+  cert.sign(keys.privateKey);
+
+  return {
+    key: pki.privateKeyToPem(keys.privateKey),
+    cert: pki.certificateToPem(cert)
+  };
+}
+
+let credentials;
+try {
+  credentials = generateCertificate();
+  console.log('Certificate generated successfully');
+} catch (error) {
+  console.error('Failed to generate certificate:', error);
+  process.exit(1);
+}
+
+let server;
+try {
+  server = createServer(credentials, app);
+  console.log('HTTPS server created successfully');
+} catch (error) {
+  console.error('Failed to create HTTPS server:', error);
+  process.exit(1);
+}
+
 const wss = new WebSocketServer({ server });
 
 const port = process.env.PORT || 5050;
@@ -55,7 +111,7 @@ app.post('/api/qr-data', (req, res) => {
 
 server.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  console.log(`WebSocket server is running on ws://localhost:${port}`); // Change to ws://
+  console.log(`WebSocket server is running on wss://localhost:${port}`);
 }).on('error', (error) => {
   console.error('Server failed to start:', error);
   process.exit(1);
