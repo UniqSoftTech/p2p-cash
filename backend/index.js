@@ -1,16 +1,55 @@
 import express from 'express';
-import { Server } from 'socket.io';
-import { createServer } from 'http';
+import { createServer } from 'https';
+import { WebSocketServer } from 'ws';
+import crypto from 'crypto';
+import forge from 'node-forge';
 
 const app = express();
-const http = createServer(app);
-const io = new Server(http, {
-  cors: {
-    origin: "*", // Be more specific in production
-    methods: ["GET", "POST"]
-  },
-  transports: ['websocket', 'polling'] // Add polling as a fallback
-});
+
+// Generate a self-signed certificate
+function generateCertificate() {
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
+  
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = '01';
+  cert.validity.notBefore = new Date();
+  cert.validity.notAfter = new Date();
+  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+
+  const attrs = [{
+    name: 'commonName',
+    value: 'example.org'
+  }, {
+    name: 'countryName',
+    value: 'US'
+  }, {
+    shortName: 'ST',
+    value: 'Virginia'
+  }, {
+    name: 'localityName',
+    value: 'Blacksburg'
+  }, {
+    name: 'organizationName',
+    value: 'Test'
+  }, {
+    shortName: 'OU',
+    value: 'Test'
+  }];
+
+  cert.setSubject(attrs);
+  cert.setIssuer(attrs);
+  cert.sign(keys.privateKey);
+
+  return {
+    cert: forge.pki.certificateToPem(cert),
+    privateKey: forge.pki.privateKeyToPem(keys.privateKey)
+  };
+}
+
+const credentials = generateCertificate();
+const server = createServer(credentials, app);
+const wss = new WebSocketServer({ server });
 
 const port = process.env.PORT || 5050;
 
@@ -20,21 +59,21 @@ app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
 
-io.on('connection', (socket) => {
-  console.log('a user connected', socket.id);
+wss.on('connection', (ws) => {
+  console.log('a user connected', ws.id);
 
   // Add a ping-pong mechanism to keep the connection alive
-  socket.on('ping', () => {
-    socket.emit('pong');
+  ws.on('ping', () => {
+    ws.emit('pong');
   });
 
-  socket.on('disconnect', () => {
+  ws.on('disconnect', () => {
     console.log('user disconnected');
   });
 
-  socket.on('message', (msg) => {
+  ws.on('message', (msg) => {
     console.log('message: ' + msg);
-    io.emit('message', msg);
+    wss.emit('message', msg);
   });
 });
 
@@ -43,22 +82,23 @@ app.post('/api/qr-data', (req, res) => {
   console.log('Received payload:', payload);
   
   // Emit the payload to all connected clients
-  io.emit('new_data', payload);
+  wss.emit('new_data', payload);
   
   res.status(200).json({ message: 'Payload received and broadcast successfully' });
 });
 
-http.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  console.log(`WebSocket server is running on ws://localhost:${port}`);
+  console.log(`WebSocket server is running on wss://localhost:${port}`);
+  console.log('Warning: Using a self-signed certificate. Not suitable for production.');
 });
 
-// Add error handling for the Socket.IO server
-io.on('connect_error', (error) => {
-  console.error('Socket.IO connection error:', error);
+// Add error handling for the WebSocket server
+wss.on('error', (error) => {
+  console.error('WebSocket server error:', error);
 });
 
-// Error handling for the HTTP server
-http.on('error', (error) => {
-  console.error('HTTP server error:', error);
+// Error handling for the HTTPS server
+server.on('error', (error) => {
+  console.error('HTTPS server error:', error);
 });

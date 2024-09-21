@@ -59,12 +59,12 @@ export default function Home() {
   const handleAccept = async () => {
     if (paymentRequest && paymentRequest.qrcode) {
       try {
-        const iosAppUrl = `com.dbs.sg.dbsmbanking://q?qPay_QRCode=`;
+        const iosAppUrl = `com.dbs.sg.dbsmbanking://`;
         window.location.href = iosAppUrl;
       } catch (error) {
         console.error('Failed to open payment app:', error);
         // Fallback to opening the App Store
-        window.location.href = 'https://apps.apple.com/app/dbs-digibank';
+        window.location.href = 'https://apps.apple.com/app/com.dbs.sg.dbsmbanking';
       }
     }
   };
