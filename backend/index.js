@@ -1,59 +1,25 @@
 import express from 'express';
-import { createServer } from 'https';
+import { createServer } from 'http'; // Change this to http
 import { WebSocketServer } from 'ws';
-import crypto from 'crypto';
-import forge from 'node-forge';
+// Remove the forge import as we won't be using it for now
 
 const app = express();
 
-// Generate a self-signed certificate
-function generateCertificate() {
-  const keys = forge.pki.rsa.generateKeyPair(2048);
-  const cert = forge.pki.createCertificate();
-  
-  cert.publicKey = keys.publicKey;
-  cert.serialNumber = '01';
-  cert.validity.notBefore = new Date();
-  cert.validity.notAfter = new Date();
-  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+// Remove the generateCertificate function
 
-  const attrs = [{
-    name: 'commonName',
-    value: 'example.org'
-  }, {
-    name: 'countryName',
-    value: 'US'
-  }, {
-    shortName: 'ST',
-    value: 'Virginia'
-  }, {
-    name: 'localityName',
-    value: 'Blacksburg'
-  }, {
-    name: 'organizationName',
-    value: 'Test'
-  }, {
-    shortName: 'OU',
-    value: 'Test'
-  }];
-
-  cert.setSubject(attrs);
-  cert.setIssuer(attrs);
-  cert.sign(keys.privateKey);
-
-  return {
-    cert: forge.pki.certificateToPem(cert),
-    privateKey: forge.pki.privateKeyToPem(keys.privateKey)
-  };
-}
-
-const credentials = generateCertificate();
-const server = createServer(credentials, app);
+// Remove the credentials variable
+const server = createServer(app); // Remove credentials parameter
 const wss = new WebSocketServer({ server });
 
 const port = process.env.PORT || 5050;
 
 app.use(express.json());
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
 app.get('/', (req, res) => {
   res.send('Hello, world!');
@@ -89,8 +55,10 @@ app.post('/api/qr-data', (req, res) => {
 
 server.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  console.log(`WebSocket server is running on wss://localhost:${port}`);
-  console.log('Warning: Using a self-signed certificate. Not suitable for production.');
+  console.log(`WebSocket server is running on ws://localhost:${port}`); // Change to ws://
+}).on('error', (error) => {
+  console.error('Server failed to start:', error);
+  process.exit(1);
 });
 
 // Add error handling for the WebSocket server
