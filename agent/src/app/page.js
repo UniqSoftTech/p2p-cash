@@ -18,8 +18,11 @@ export default function Home() {
           const data = await response.json();
           setPaymentRequest(data);
           setConnectionStatus('Data received');
+          console.log('Payment request received:', data);
         } else if (response.status === 204) {
           setConnectionStatus('No new data');
+          // Remove this line to keep the existing paymentRequest
+          // setPaymentRequest(null);
         }
       } catch (error) {
         console.error('Polling error:', error);
@@ -66,7 +69,11 @@ export default function Home() {
         <p>Connection status: {connectionStatus}</p>
         {paymentRequest && (
           <div>
-            <p>Payment request received</p>
+            <h2>Payment Request Details</h2>
+            <p>Amount: {paymentRequest.amount}</p>
+            <p>Currency: {paymentRequest.currency}</p>
+            <p>Recipient: {paymentRequest.recipient}</p>
+            <p>Description: {paymentRequest.description}</p>
             <button onClick={handleAccept}>Accept Payment</button>
           </div>
         )}
