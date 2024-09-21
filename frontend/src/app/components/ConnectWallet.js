@@ -1,61 +1,46 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { useEffect, useState } from "react";
-import Web3Modal from "web3modal";
-import WalletConnectProvider from "@walletconnect/web3-provider"; // Import WalletConnect
-import useWalletAddress from "../hooks/useWallet";
 import { useRouter } from "next/navigation";
+import { MetaMaskSDK } from "@metamask/sdk"; // Import MetaMask SDK
+import useWalletAddress from "../hooks/useWallet"; // Custom hook to store wallet address
 
 function App() {
   const [connected, setConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
-  const [web3Modal, setWeb3Modal] = useState(null);
   const { storeWalletAddress } = useWalletAddress();
-  const router = useRouter(); // Get the router instance
+  const router = useRouter(); // Router instance
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const providerOptions = {
-        walletconnect: {
-          package: WalletConnectProvider, // required
-          options: {
-            infuraId: "YOUR_INFURA_PROJECT_ID", // Required for WalletConnect (replace with your Infura ID)
-          },
-        },
-      };
+    // Initialize MetaMask SDK for both web and mobile
+    const MMSDK = new MetaMaskSDK({
+      injectProvider: true, // Inject MetaMask provider
+      useDeeplink: true, // Automatically handle deep links for mobile
+    });
 
-      const modal = new Web3Modal({
-        cacheProvider: false,
-        providerOptions, // Add WalletConnect options
-      });
-      setWeb3Modal(modal);
-    }
+    const ethereum = MMSDK.getProvider(); // MetaMask Provider
+    window.ethereum = ethereum; // Set it globally
   }, []);
 
-  // Function to connect/disconnect the wallet
+  // Function to connect/disconnect the MetaMask wallet
   async function connectWallet() {
-    if (typeof window !== "undefined") {
-      if (!connected) {
-        try {
-          const instance = await web3Modal.connect();
-          const provider = new ethers.BrowserProvider(instance);
-          const signer = await provider.getSigner();
-          const _walletAddress = await signer.getAddress();
+    if (typeof window !== "undefined" && window.ethereum) {
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const signer = await provider.getSigner();
+        const _walletAddress = await signer.getAddress();
 
-          setConnected(true);
-          setWalletAddress(_walletAddress);
-          storeWalletAddress(_walletAddress);
-          router.push(`/home?walletAddress=${_walletAddress}`);
-        } catch (error) {
-          console.error("Failed to connect wallet:", error);
-        }
-      } else {
-        setConnected(false);
-        setWalletAddress("");
-        storeWalletAddress("");
-        web3Modal.clearCachedProvider(); // Clear cache to allow re-connection
+        setConnected(true);
+        setWalletAddress(_walletAddress);
+        storeWalletAddress(_walletAddress);
+        router.push(`/home?walletAddress=${_walletAddress}`);
+      } catch (error) {
+        console.error("Failed to connect wallet:", error);
       }
+    } else {
+      alert("MetaMask is not installed. Please install it to continue.");
     }
   }
 
