@@ -71,7 +71,7 @@ export default function Home() {
           <div>
             <h2>Payment Request Details</h2>
             <p>Amount: {paymentRequest.amount}</p>
-            <p>Currency: {paymentRequest.currency}</p>
+            <p>Currency: {paymentRequest.merchantId}</p>
             <p>Recipient: {paymentRequest.recipient}</p>
             <p>Description: {paymentRequest.description}</p>
             <button onClick={handleAccept}>Accept Payment</button>
