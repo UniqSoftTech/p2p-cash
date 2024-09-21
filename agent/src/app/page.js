@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Image from 'next/image';
 
 export default function Home() {
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Polling...');
+  const [imageSrc, setImageSrc] = useState(null);
 
   useEffect(() => {
     const pollInterval = 5000; // Poll every 5 seconds
@@ -19,6 +21,11 @@ export default function Home() {
           setPaymentRequest(data);
           setConnectionStatus('Data received');
           console.log('Payment request received:', data);
+          
+          // Set image source if available
+          if (data.image && data.image.filename) {
+            setImageSrc(`https://seahorse-app-fejfa.ondigitalocean.app/uploads/${data.image.filename}`);
+          }
         } else if (response.status === 204) {
           setConnectionStatus('No new data');
           // Remove this line to keep the existing paymentRequest
@@ -57,6 +64,17 @@ export default function Home() {
     }
   };
 
+  const handleSaveImage = () => {
+    if (imageSrc) {
+      const link = document.createElement('a');
+      link.href = imageSrc;
+      link.download = 'payment_image.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div>
       <Head>
@@ -74,6 +92,12 @@ export default function Home() {
             <p>Currency: {paymentRequest.merchantId}</p>
             <p>Recipient: {paymentRequest.recipient}</p>
             <p>Description: {paymentRequest.description}</p>
+            {imageSrc && (
+              <div>
+                <Image src={imageSrc} alt="Payment Image" width={300} height={300} />
+                <button onClick={handleSaveImage}>Save Image</button>
+              </div>
+            )}
             <button onClick={handleAccept}>Accept Payment</button>
           </div>
         )}

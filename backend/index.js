@@ -43,7 +43,7 @@ app.post('/api/qr-data', (req, res) => {
 // Configure multer for file uploads
 const upload = multer({ dest: 'uploads/' });
 
-// Add a new endpoint for receiving images
+// Update the image upload endpoint
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No image file uploaded' });
@@ -51,8 +51,25 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
   
   console.log('Received image:', req.file);
   
-  // Here you can process the image or save its information
-  // For now, we'll just send back some basic file info
+  // Update latestData with image information
+  if (latestData) {
+    latestData.image = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      path: req.file.path
+    };
+  } else {
+    latestData = {
+      image: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        path: req.file.path
+      }
+    };
+  }
+  
   res.status(200).json({
     message: 'Image uploaded successfully',
     filename: req.file.filename,
@@ -61,7 +78,7 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
   });
 });
 
-// Add a new endpoint for polling
+// The poll-data endpoint remains the same
 app.get('/api/poll-data', (req, res) => {
   if (latestData) {
     res.json(latestData);
