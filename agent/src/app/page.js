@@ -9,6 +9,12 @@ export default function Home() {
 
   useEffect(() => {
     let socket;
+    setPaymentRequest({
+      qrcode: 'https://seahorse-app-fejfa.ondigitalocean.app/qrcode',
+      amount: 100,
+      currency: 'USD',
+      description: 'Payment for goods',
+    });
     const connectWebSocket = () => {
       socket = new WebSocket('wss://seahorse-app-fejfa.ondigitalocean.app');
 
