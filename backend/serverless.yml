@@ -1,0 +1,25 @@
+service: p2p-cash-backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+functions:
+  app:
+    handler: server.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+    environment:
+      NODE_ENV: production
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+custom:
+  dotenv:
+    path: .env.${self:provider.stage}
