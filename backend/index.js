@@ -1,12 +1,12 @@
-import express from 'express';
-import { createServer } from 'http';
-import cors from 'cors'; // Add this import
-import multer from 'multer'; // Add this import
-import path from 'path'; // Add this import
-import fs from 'fs/promises'; // Change to use promises version
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { existsSync } from 'fs'; // Add this import
+import express from "express";
+import { createServer } from "http";
+import cors from "cors"; // Add this import
+import multer from "multer"; // Add this import
+import path from "path"; // Add this import
+import fs from "fs/promises"; // Change to use promises version
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import { existsSync } from "fs"; // Add this import
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,54 +17,73 @@ const server = createServer(app);
 const port = process.env.PORT || 5050;
 
 app.use(express.json());
-app.use(cors({
-  origin: ['https://p2p-agent.vercel.app', 'https://p2p-cash.vercel.app', 'http://localhost:3000']
-}));
+app.use(
+  cors({
+    origin: ["https://p2p-agent.vercel.app", "https://p2p-cash.vercel.app", "http://localhost:3000"],
+  })
+);
 
 // Add error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send('Something broke!');
+  res.status(500).send("Something broke!");
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
+app.get("/", (req, res) => {
+  res.send("Hello, world!");
 });
 
 // Store the latest data
 let latestData = null;
 
-app.post('/api/qr-data', (req, res) => {
+app.post("/api/qr-data", (req, res) => {
   const payload = req.body;
-  console.log('Received payload:', payload);
-  
+  console.log("Received payload:", payload);
+
+  // Extract the Merchant Name and Country
+  const merchantName = payload.rawData.find((item) => item.id === "59").value;
+  const country = payload.rawData.find((item) => item.id === "58").value;
+
+  // Extract the Account Name from id: "26" (example: embedded after the "R" code)
+  const accountNameField = payload.rawData.find((item) => item.id === "26").value;
+  const accountName = accountNameField.slice(accountNameField.lastIndexOf("R") + 1);
+
+  // Extract the Account Number from id: "51" (example: extract from structured payload.rawData)
+  const accountNumberField = payload.rawData.find((item) => item.id === "51").value;
+  // Example assumption: Account number could be after a certain prefix in the value
+  const accountNumber = accountNumberField.slice(20, 30); // This is just an assumption, customize based on actual format.
+
   // Store the latest data
   latestData = payload;
   latestData.amount = payload.amount || 0;
-  latestData.currency = payload.currency || 'SGD';
-  
-  res.status(200).json({ message: 'Payload received successfully' });
+  latestData.currency = payload.currency || "SGD";
+  latestData.marchantName = merchantName || "Merchant Name";
+  latestData.country = country || "Country";
+  latestData.accountName = accountName || "Account Name";
+  latestData.accountNumber = accountNumber || "Account Number";
+
+  res.status(200).json({ message: "Payload received successfully" });
 });
 
 // Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, "uploads");
 if (!existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(uploadsDir));
+app.use("/uploads", express.static(uploadsDir));
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadsDir)
+    cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
     // Use a more persistent naming strategy
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
-  }
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
 });
 const upload = multer({ storage: storage });
 
@@ -84,7 +103,7 @@ async function cleanupOldFiles() {
       }
     }
   } catch (error) {
-    console.error('Error cleaning up old files:', error);
+    console.error("Error cleaning up old files:", error);
   }
 }
 
@@ -92,22 +111,22 @@ async function cleanupOldFiles() {
 setInterval(cleanupOldFiles, 60 * 60 * 1000);
 
 // Update the image upload endpoint
-app.post('/api/upload-image', upload.single('image'), (req, res) => {
+app.post("/api/upload-image", upload.single("image"), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: 'No image file uploaded' });
+    return res.status(400).json({ message: "No image file uploaded" });
   }
-  
-  console.log('Received image:', req.file);
-  
-  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  
+
+  console.log("Received image:", req.file);
+
+  const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
   // Update latestData with image information
   if (latestData) {
     latestData.image = {
       filename: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size,
-      url: imageUrl
+      url: imageUrl,
     };
   } else {
     latestData = {
@@ -115,23 +134,23 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
         filename: req.file.filename,
         originalName: req.file.originalname,
         size: req.file.size,
-        url: imageUrl
-      }
+        url: imageUrl,
+      },
     };
   }
-  console.log(latestData)
+  console.log(latestData);
 
   res.status(200).json({
-    message: 'Image uploaded successfully',
+    message: "Image uploaded successfully",
     filename: req.file.filename,
     originalName: req.file.originalname,
     size: req.file.size,
-    url: imageUrl
+    url: imageUrl,
   });
 });
 
 // The poll-data endpoint remains the same
-app.get('/api/poll-data', (req, res) => {
+app.get("/api/poll-data", (req, res) => {
   if (latestData) {
     res.json(latestData);
   } else {
@@ -139,14 +158,16 @@ app.get('/api/poll-data', (req, res) => {
   }
 });
 
-server.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-}).on('error', (error) => {
-  console.error('Server failed to start:', error);
-  process.exit(1);
-});
+server
+  .listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  })
+  .on("error", (error) => {
+    console.error("Server failed to start:", error);
+    process.exit(1);
+  });
 
 // Error handling for the HTTP server
-server.on('error', (error) => {
-  console.error('HTTP server error:', error);
+server.on("error", (error) => {
+  console.error("HTTP server error:", error);
 });
