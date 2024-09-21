@@ -21,7 +21,7 @@ const QrScanner = () => {
 
     const sendToBackend = async (data) => {
       try {
-        const response = await fetch('/api/qr-data', {
+        const response = await fetch('https://seahorse-app-fejfa.ondigitalocean.app/api/qr-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
