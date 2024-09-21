@@ -5,53 +5,38 @@ import Head from 'next/head';
 
 export default function Home() {
   const [paymentRequest, setPaymentRequest] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [connectionStatus, setConnectionStatus] = useState('Polling...');
 
   useEffect(() => {
-    let socket;
-    setPaymentRequest({
-      qrcode: 'https://seahorse-app-fejfa.ondigitalocean.app/qrcode',
-      amount: 100,
-      currency: 'USD',
-      description: 'Payment for goods',
-    });
-    const connectWebSocket = () => {
-      socket = new WebSocket('wss://seahorse-app-fejfa.ondigitalocean.app:5050');
+    const pollInterval = 5000; // Poll every 5 seconds
+    let pollTimer;
 
-      socket.onopen = () => {
-        console.log('WebSocket connection established');
-        setConnectionStatus('Connected');
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'paymentRequest') {
-            setPaymentRequest(data.payload);
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+    const pollData = async () => {
+      try {
+        const response = await fetch('https://seahorse-app-fejfa.ondigitalocean.app/api/poll-data');
+        if (response.status === 200) {
+          const data = await response.json();
+          setPaymentRequest(data);
+          setConnectionStatus('Data received');
+        } else if (response.status === 204) {
+          setConnectionStatus('No new data');
         }
-      };
-
-      socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      } catch (error) {
+        console.error('Polling error:', error);
         setConnectionStatus('Connection error. Retrying...');
-        setTimeout(connectWebSocket, 5000); // Retry after 5 seconds
-      };
-
-      socket.onclose = () => {
-        console.log('WebSocket connection closed');
-        setConnectionStatus('Disconnected. Retrying...');
-        setTimeout(connectWebSocket, 5000); // Retry after 5 seconds
-      };
+      }
     };
 
-    connectWebSocket();
+    const startPolling = () => {
+      pollData(); // Initial poll
+      pollTimer = setInterval(pollData, pollInterval);
+    };
+
+    startPolling();
 
     return () => {
-      if (socket) {
-        socket.close();
+      if (pollTimer) {
+        clearInterval(pollTimer);
       }
     };
   }, []);
