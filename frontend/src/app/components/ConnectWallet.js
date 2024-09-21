@@ -14,16 +14,19 @@ function App() {
 
   // Helper function to check if the device is mobile
   const isMobile = () => {
-    if (navigator.userAgentData) {
+    if (typeof window !== "undefined" && navigator) {
       // Use userAgentData if available for a more accurate check
-      return navigator.userAgentData.mobile;
-    } else {
-      // Fallback to userAgent string detection
-      return (
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) &&
-        !window.navigator.platform.includes("MacIntel")
-      );
+      if (navigator.userAgentData) {
+        return navigator.userAgentData.mobile;
+      } else {
+        // Fallback to userAgent string detection
+        return (
+          /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) &&
+          !window.navigator.platform.includes("MacIntel")
+        );
+      }
     }
+    return false;
   };
   console.log("🚀 ~ App ~ isMobile:", isMobile());
 
