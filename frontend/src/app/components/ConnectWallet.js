@@ -10,10 +10,25 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const { storeWalletAddress } = useWalletAddress();
-  const router = useRouter(); // Router instance
+  const router = useRouter();
+
+  // Helper function to check if the device is mobile
+  const isMobile = () => {
+    if (navigator.userAgentData) {
+      // Use userAgentData if available for a more accurate check
+      return navigator.userAgentData.mobile;
+    } else {
+      // Fallback to userAgent string detection
+      return (
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) &&
+        !window.navigator.platform.includes("MacIntel")
+      );
+    }
+  };
+  console.log("🚀 ~ App ~ isMobile:", isMobile());
 
   useEffect(() => {
-    // Initialize MetaMask SDK for both web and mobile
+    // Initialize MetaMask SDK
     const MMSDK = new MetaMaskSDK({
       injectProvider: true, // Inject MetaMask provider
       useDeeplink: true, // Automatically handle deep links for mobile
@@ -25,22 +40,28 @@ function App() {
 
   // Function to connect/disconnect the MetaMask wallet
   async function connectWallet() {
-    if (typeof window !== "undefined" && window.ethereum) {
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const signer = await provider.getSigner();
-        const _walletAddress = await signer.getAddress();
+    if (typeof window !== "undefined") {
+      if (window.ethereum && !isMobile()) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const signer = await provider.getSigner();
+          const _walletAddress = await signer.getAddress();
 
-        setConnected(true);
-        setWalletAddress(_walletAddress);
-        storeWalletAddress(_walletAddress);
-        router.push(`/home?walletAddress=${_walletAddress}`);
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
+          setConnected(true);
+          setWalletAddress(_walletAddress);
+          storeWalletAddress(_walletAddress);
+          router.push(`/home?walletAddress=${_walletAddress}`);
+        } catch (error) {
+          console.error("Failed to connect wallet:", error);
+        }
+      } else if (isMobile()) {
+        // Deep link to MetaMask mobile app if it's not injected
+        window.location.href =
+          "https://metamask.app.link/dapp/p2p-cash.vercel.app";
+      } else {
+        alert("MetaMask is not installed. Please install it to continue.");
       }
-    } else {
-      alert("MetaMask is not installed. Please install it to continue.");
     }
   }
 
