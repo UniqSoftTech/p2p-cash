@@ -16,7 +16,7 @@ function App() {
     try {
       await sdk?.connect();
       setWalletAddress(account); // account is provided by useMetaMask hook
-      router.push(`/home?walletAddress=${account}`);
+      router.push(`/home`);
     } catch (error) {
       console.error("Failed to connect:", error);
     }
